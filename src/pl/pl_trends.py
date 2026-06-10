@@ -1611,8 +1611,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--db",
         type=Path,
-        required=True,
-        help="Path to sqlite DB",
+        default=Path("../stock_db/var/db/stocks.db"),
+        help="Path to sqlite DB (default: ../stock_db/var/db/stocks.db)",
     )
     parser.add_argument(
         "--periods",
@@ -1639,8 +1639,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--open-with-playwright",
-        action="store_true",
-        help="Open the generated HTML with Playwright and verify that the chart rendered",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Open the generated HTML with Playwright and verify that the chart rendered (default: True)",
     )
     parser.add_argument(
         "--playwright-screenshot",
@@ -1650,13 +1651,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--playwright-headed",
         action="store_true",
-        help="Run Playwright with a visible browser window",
+        default=True,
+        help="Run Playwright with a visible browser window (default: True)",
     )
     parser.add_argument(
         "--playwright-hold-ms",
         type=int,
-        default=0,
-        help="Keep the Playwright page open this many milliseconds after verification",
+        default=600_000,
+        help="Keep the Playwright page open this many milliseconds after verification (default: 600000 = 10 min)",
     )
     parser.add_argument(
         "--playwright-browser-executable",

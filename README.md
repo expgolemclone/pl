@@ -29,34 +29,40 @@ uv sync --group dev   # Playwrightによる検証を行う場合
 ## 使い方
 
 ```sh
-# 直近10期の損益計算書推移を出力
-uv run pl-trends 4776 --db /path/to/stocks.db
+# 直近10期の損益計算書推移を出力し、Playwrightで10分間表示
+uv run pl-trends 4776
 
 # 期間数を指定
-uv run pl-trends 4776 --db /path/to/stocks.db --periods 5
+uv run pl-trends 4776 --periods 5
 
 # 出力先を指定
-uv run pl-trends 4776 --db /path/to/stocks.db --output var/reports/4776.html
+uv run pl-trends 4776 --output var/reports/4776.html
 
 # 個別財務のみ
-uv run pl-trends 4776 --db /path/to/stocks.db --scope non_consolidated
+uv run pl-trends 4776 --scope non_consolidated
 
-# Playwrightで開いてスクリーンショットを保存
-uv run pl-trends 4776 --db /path/to/stocks.db --playwright-screenshot var/reports/4776.png
+# Playwrightを無効化してHTMLのみ生成
+uv run pl-trends 4776 --no-open-with-playwright
+
+# DBパスを明示的に指定
+uv run pl-trends 4776 --db /path/to/stocks.db
+
+# スクリーンショットを保存
+uv run pl-trends 4776 --playwright-screenshot var/reports/4776.png
 ```
 
 実行例:
 
 ```
-$ uv run pl-trends 4776 --db stocks.db --periods 5
+$ uv run pl-trends 4776 --periods 5
 Wrote var/reports/4776_pl_trends.html
 4776 サイボウズ: 5 periods, 45 PL items
 
-$ uv run pl-trends 7203 --db stocks.db --periods 3
+$ uv run pl-trends 7203 --periods 3
 Wrote var/reports/7203_pl_trends.html
 7203 トヨタ自動車: 3 periods, 21 PL items
 
-$ uv run pl-trends 7203 --db stocks.db --scope non_consolidated
+$ uv run pl-trends 7203 --scope non_consolidated
 Wrote var/reports/7203_pl_trends.html
 7203 トヨタ自動車: 10 periods, 18 PL items
 ```
@@ -78,15 +84,15 @@ usage: pl-trends [-h] --db DB [--periods PERIODS] [--source SOURCE]
 | オプション | デフォルト | 説明 |
 |---|---|---|
 | `ticker` | （必須） | 銘柄コード |
-| `--db` | （必須） | SQLiteデータベースのパス |
+| `--db` | `../stock_db/var/db/stocks.db` | SQLiteデータベースのパス |
 | `--periods` | `10` | 取得する直近期間数 |
 | `--source` | `edinet_xbrl` | データソースコード |
 | `--scope` | `auto` | `auto` / `consolidated` / `non_consolidated` |
 | `--output` | `var/reports/{TICKER}_pl_trends.html` | HTML出力パス |
-| `--open-with-playwright` | `false` | PlaywrightでHTMLを開いて描画を検証 |
+| `--open-with-playwright` | `true` | PlaywrightでHTMLを開いて描画を検証（`--no-open-with-playwright` で無効化） |
 | `--playwright-screenshot` | — | スクリーンショット保存パス |
-| `--playwright-headed` | `false` | ブラウザを可視状態で起動 |
-| `--playwright-hold-ms` | `0` | 検証後にページを開いたままにする時間（ms） |
+| `--playwright-headed` | `true` | ブラウザを可視状態で起動 |
+| `--playwright-hold-ms` | `600000`（10分） | 検証後にページを開いたままにする時間（ms） |
 | `--playwright-browser-executable` | — | Chromium/Chrome実行ファイルのパス |
 | `--playwright-timeout-ms` | `10000` | Playwrightのタイムアウト（ms） |
 

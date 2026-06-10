@@ -503,7 +503,7 @@ def test_main_writes_html(tmp_path: Path, capsys: object) -> None:
     output_path = tmp_path / "pl.html"
     _build_db(db_path)
 
-    rc = main(["4776", "--db", str(db_path), "--periods", "2", "--output", str(output_path)])
+    rc = main(["4776", "--db", str(db_path), "--periods", "2", "--output", str(output_path), "--no-open-with-playwright"])
     captured = capsys.readouterr()
 
     assert rc == 0
@@ -677,7 +677,7 @@ def test_main_returns_1_for_missing_ticker(tmp_path: Path, capsys: object) -> No
     db_path = tmp_path / "stocks.db"
     _build_db(db_path)
 
-    rc = main(["9999", "--db", str(db_path)])
+    rc = main(["9999", "--db", str(db_path), "--no-open-with-playwright"])
     captured = capsys.readouterr()
 
     assert rc == 1
@@ -687,7 +687,7 @@ def test_main_returns_1_for_missing_ticker(tmp_path: Path, capsys: object) -> No
 def test_main_returns_2_for_missing_db(tmp_path: Path, capsys: object) -> None:
     db_path = tmp_path / "missing.db"
 
-    rc = main(["4776", "--db", str(db_path)])
+    rc = main(["4776", "--db", str(db_path), "--no-open-with-playwright"])
     captured = capsys.readouterr()
 
     assert rc == 2
