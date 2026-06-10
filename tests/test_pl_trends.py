@@ -455,6 +455,61 @@ def test_render_html_supports_manual_multi_series_overlay() -> None:
     assert "tooltip-row" in rendered
 
 
+def test_render_html_places_hover_details_below_chart() -> None:
+    payload = {
+        "ticker": "4776",
+        "name": "Cybozu",
+        "source": "edinet_xbrl",
+        "requested_scope": "auto",
+        "periods": ["2023-12", "2024-12"],
+        "forecast_periods": ["2025-12", "2026-12"],
+        "selected_reports": [
+            {
+                "period": "2023-12",
+                "doc_id": "S100OLD",
+                "consolidation_scope": "consolidated",
+                "fact_count": 1,
+                "valued_count": 1,
+                "role_fact_count": 1,
+            },
+            {
+                "period": "2024-12",
+                "doc_id": "S100NEW",
+                "consolidation_scope": "consolidated",
+                "fact_count": 1,
+                "valued_count": 1,
+                "role_fact_count": 1,
+            },
+        ],
+        "items": [
+            {
+                "concept_name": "NetSales",
+                "label": "売上高",
+                "values": [100.0, 200.0],
+                "latest_value": 200.0,
+                "non_null_count": 2,
+                "min_value": 100.0,
+                "max_value": 200.0,
+                "total_abs_value": 300.0,
+                "cagr": None,
+                "forecast_values": [230.0, 260.0],
+            }
+        ],
+    }
+
+    rendered = render_html(payload)
+    guide_index = rendered.index('<div id="guideLine" class="guide-line"></div>')
+    tooltip_index = rendered.index('<div id="tooltip" class="tooltip" aria-live="polite"></div>')
+    period_strip_index = rendered.index('<div id="periodStrip" class="period-strip"></div>')
+
+    assert guide_index < tooltip_index < period_strip_index
+    assert 'tip.classList.add("is-visible")' in rendered
+    assert ".tooltip.is-visible" in rendered
+    assert "tip.style.left" not in rendered
+    assert "tip.style.top" not in rendered
+    assert "tip.style.display" not in rendered
+
+
 def test_render_html_contains_responsive_layout_guards() -> None:
     payload = {
         "ticker": "4776",

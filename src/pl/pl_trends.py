@@ -710,17 +710,24 @@ h1 {{
   display: block;
 }}
 .tooltip {{
-  position: absolute;
-  z-index: 4;
-  pointer-events: none;
-  display: none;
-  min-width: 180px;
-  max-width: min(320px, calc(100% - 16px));
-  padding: 8px 10px;
-  border: 1px solid var(--ink);
+  width: 100%;
+  min-width: 0;
+  min-height: 64px;
+  max-height: 150px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--line);
   background: #101411;
-  box-shadow: 3px 3px 0 rgba(240,234,219,0.18);
   font-size: 12px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  visibility: hidden;
+}}
+.tooltip.is-visible {{
+  visibility: visible;
+}}
+.tooltip > b {{
+  display: block;
+  margin-bottom: 2px;
 }}
 .guide-line {{
   position: absolute;
@@ -1025,8 +1032,8 @@ td.forecast-cell {{
       <div class="canvas-wrap">
         <canvas id="detailChart"></canvas>
         <div id="guideLine" class="guide-line"></div>
-        <div id="tooltip" class="tooltip"></div>
       </div>
+      <div id="tooltip" class="tooltip" aria-live="polite"></div>
       <div id="periodStrip" class="period-strip"></div>
     </div>
     <div class="table-panel">
@@ -1195,10 +1202,16 @@ function setCanvasSize(canvas) {{
   return {{ ctx, width: rect.width, height: rect.height }};
 }}
 
+function hideChartHover() {{
+  el("tooltip").classList.remove("is-visible");
+  el("guideLine").style.display = "none";
+}}
+
 function drawChart() {{
   const canvas = el("detailChart");
   const {{ ctx, width, height }} = setCanvasSize(canvas);
   ctx.clearRect(0, 0, width, height);
+  hideChartHover();
   const series = selectedItems();
   const compact = width < 560;
   const padding = {{
@@ -1391,12 +1404,9 @@ function drawChart() {{
     const tip = el("tooltip");
     const guide = el("guideLine");
     if (!entries.length) {{
-      tip.style.display = "none";
-      guide.style.display = "none";
+      hideChartHover();
       return;
     }}
-    const topY = Math.min(...entries.map((entry) => yAt(entry.scaledValue)));
-    const bottomY = Math.max(...entries.map((entry) => yAt(entry.scaledValue)));
     const pointX = xAt(nearest.index);
     const fcTag = nearest.isForecast ? " <span style=\\"color:#f4b942;font-size:10px\\">(予測)</span>" : "";
 
@@ -1407,31 +1417,12 @@ function drawChart() {{
         <strong>${{formatValue(entry.rawValue)}}</strong>
       </div>
     `).join("")}}`;
-    tip.style.display = "block";
-
-    const tipW = tip.offsetWidth;
-    const tipH = tip.offsetHeight;
-    const chartTop = padding.top;
-    const chartBottom = height - padding.bottom;
-    const wrapW = rect.width;
-
-    let tipLeft = pointX + 14;
-    if (tipLeft + tipW > wrapW - 8) tipLeft = pointX - tipW - 14;
-    tipLeft = Math.max(8, tipLeft);
-
-    let tipTop = topY - tipH - 8;
-    if (tipTop < 8) tipTop = bottomY + 8;
-    if (tipTop + tipH > chartBottom) tipTop = Math.max(8, chartTop);
-    tip.style.left = `${{tipLeft}}px`;
-    tip.style.top = `${{tipTop}}px`;
+    tip.classList.add("is-visible");
 
     guide.style.left = `${{pointX}}px`;
     guide.style.display = "block";
   }};
-  canvas.onmouseleave = () => {{
-    el("tooltip").style.display = "none";
-    el("guideLine").style.display = "none";
-  }};
+  canvas.onmouseleave = hideChartHover;
 }}
 
 function scheduleChartDraw() {{
