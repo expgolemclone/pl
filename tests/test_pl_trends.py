@@ -380,7 +380,14 @@ def test_render_html_embeds_data() -> None:
     assert "4776" in rendered
     assert "売上高" in rendered
     assert "detailChart" in rendered
-    assert "forecastToggleChart" in rendered
+    assert "forecastToggle" in rendered
+    assert "forecastToggleChart" not in rendered
+    assert "forecastToggleTable" not in rendered
+    assert "forecast-help" not in rendered
+    assert "CAGR forecast" in rendered
+    assert "CAGR = (Vlast / Vfirst)^(1 / gaps) - 1" in rendered
+    assert "CAGR予測を表示" not in rendered
+    assert "CAGR予測を非表示" not in rendered
     assert "toggleForecast" in rendered
 
 

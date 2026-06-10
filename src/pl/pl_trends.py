@@ -957,17 +957,6 @@ tr.hidden-row {{
 .forecast-toggle.active:hover {{
   background: #d9a33a;
 }}
-.forecast-help {{
-  font-size: 11px;
-  color: var(--muted);
-  padding: 4px 14px 8px;
-  line-height: 1.5;
-}}
-.forecast-help code {{
-  color: var(--accent-3);
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 11px;
-}}
 .period-cell.forecast {{
   color: var(--accent-3);
   font-style: italic;
@@ -1033,10 +1022,6 @@ td.forecast-cell {{
   </header>
   <section class="stage">
     <div class="chart-panel">
-      <div style="display:flex;justify-content:flex-end;padding:8px 14px 0;">
-        <button type="button" id="forecastToggleChart" class="forecast-toggle" aria-pressed="false">CAGR予測を表示</button>
-      </div>
-      <div class="forecast-help">CAGR = (V<tsub>終</tsub> / V<tsub>始</tsub>)<sup>1/n</sup> − 1　※ n = 期間数−1、V<tsub>始</tsub>とV<tsub>終</tsub>は最初と最後の非null値</div>
       <div class="canvas-wrap">
         <canvas id="detailChart"></canvas>
         <div id="guideLine" class="guide-line"></div>
@@ -1056,7 +1041,7 @@ td.forecast-cell {{
           <button type="button" id="selectAllBtn">全選択</button>
           <button type="button" id="deselectAllBtn">全解除</button>
         </div>
-        <button type="button" id="forecastToggleTable" class="forecast-toggle" aria-pressed="false">CAGR予測を表示</button>
+        <button type="button" id="forecastToggle" class="forecast-toggle" aria-pressed="false" title="CAGR = (Vlast / Vfirst)^(1 / gaps) - 1. gaps = index distance between the first and last non-null values.">CAGR forecast</button>
       </div>
       <table>
         <thead id="tableHead"></thead>
@@ -1119,11 +1104,9 @@ function toggleItemSelection(conceptName) {{
 
 function toggleForecast() {{
   showForecast = !showForecast;
-  document.querySelectorAll(".forecast-toggle").forEach((btn) => {{
-    btn.classList.toggle("active", showForecast);
-    btn.textContent = showForecast ? "CAGR予測を非表示" : "CAGR予測を表示";
-    btn.setAttribute("aria-pressed", String(showForecast));
-  }});
+  const btn = el("forecastToggle");
+  btn.classList.toggle("active", showForecast);
+  btn.setAttribute("aria-pressed", String(showForecast));
   renderAll();
 }}
 
@@ -1482,8 +1465,7 @@ el("deselectAllBtn").addEventListener("click", () => {{
   renderAll();
 }});
 el("search").addEventListener("input", renderTable);
-el("forecastToggleChart").addEventListener("click", toggleForecast);
-el("forecastToggleTable").addEventListener("click", toggleForecast);
+el("forecastToggle").addEventListener("click", toggleForecast);
 window.addEventListener("resize", scheduleChartDraw);
 if ("ResizeObserver" in window) {{
   const chartResizeObserver = new ResizeObserver(scheduleChartDraw);
