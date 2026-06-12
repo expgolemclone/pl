@@ -4,6 +4,14 @@ XBRL損益計算書の推移を可視化する静的HTMLジェネレーター。
 
 EDINET XBRLデータをSQLiteから読み込み、インタラクティブなダークテーマのHTMLチャートを出力する。
 
+## 公開レポート
+
+GitHub Pages: <https://expgolemclone.github.io/pl/>
+
+- [6142 富士精工](https://expgolemclone.github.io/pl/reports/6142_pl_trends.html)
+- [7175 今村証券](https://expgolemclone.github.io/pl/reports/7175_pl_trends.html)
+- [4776 サイボウズ](https://expgolemclone.github.io/pl/reports/4776_pl_trends.html)
+
 ## 機能
 
 - **複数系列のオーバーレイ** ― テーブルの行をクリックして任意のPL項目を重ね描き
