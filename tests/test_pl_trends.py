@@ -340,51 +340,6 @@ def test_build_payload_selects_consolidated_reports_and_dedupes_values(tmp_path:
     assert len(items["NetSales"]["forecast_values"]) == 2
 
 
-def test_build_payload_auto_scope_uses_single_scope_with_enough_periods(tmp_path: Path) -> None:
-    db_path = tmp_path / "stocks.db"
-    _build_db(db_path)
-
-    conn = sqlite3.connect(str(db_path))
-    conn.row_factory = sqlite3.Row
-    source_id = _source_id(conn)
-    _insert_pl_fact(
-        conn,
-        source_id=source_id,
-        period="2024-12",
-        doc_id="S100NC24",
-        scope="non_consolidated",
-        concept="NetSales",
-        value=1000.0,
-    )
-    _insert_pl_fact(
-        conn,
-        source_id=source_id,
-        period="2025-12",
-        doc_id="S100NC25",
-        scope="non_consolidated",
-        concept="NetSales",
-        value=1100.0,
-    )
-    conn.commit()
-    conn.close()
-
-    conn = sqlite3.connect(f"file:{db_path.resolve()}?mode=ro", uri=True)
-    conn.row_factory = sqlite3.Row
-    try:
-        payload = build_pl_trend_payload(conn, ticker="4776", n_periods=3)
-    finally:
-        conn.close()
-
-    assert payload["periods"] == ["2023-12", "2024-12", "2025-12"]
-    assert {row["consolidation_scope"] for row in payload["selected_reports"]} == {
-        "non_consolidated"
-    }
-    items = {item["concept_name"]: item for item in payload["items"]}
-    assert set(items) == {"NetSales"}
-    assert items["NetSales"]["values"] == [999.0, 1000.0, 1100.0]
-    assert all(value is not None for value in items["NetSales"]["values"])
-
-
 def test_render_html_embeds_data() -> None:
     payload = {
         "ticker": "4776",

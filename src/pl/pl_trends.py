@@ -9,10 +9,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal, Sequence, TypedDict
 
-ResolvedScope = Literal["consolidated", "non_consolidated"]
 ScopeArg = Literal["auto", "consolidated", "non_consolidated"]
-
-_SCOPE_PRIORITY: tuple[ResolvedScope, ...] = ("consolidated", "non_consolidated")
 
 _JAPANESE_PL_LABELS: dict[str, str] = {
     "AdvertisingExpensesSGA": "広告宣伝費",
@@ -149,7 +146,6 @@ def _get_latest_periods(
     *,
     ticker: str,
     source: str,
-    scope: ResolvedScope,
     n_periods: int,
 ) -> list[str]:
     rows = conn.execute(
@@ -160,76 +156,30 @@ def _get_latest_periods(
           ON ds.source_id = f.source_id
         WHERE f.ticker = ?
           AND ds.source_code = ?
-          AND f.consolidation_scope = ?
           AND f.value IS NOT NULL
         ORDER BY f.period DESC
         LIMIT ?
         """,
-        (ticker, source, scope, n_periods),
+        (ticker, source, n_periods),
     ).fetchall()
     return [str(row["period"]) for row in reversed(rows)]
 
 
-def _get_period_counts_by_scope(
-    conn: sqlite3.Connection,
-    *,
-    ticker: str,
-    source: str,
-) -> dict[ResolvedScope, int]:
-    rows = conn.execute(
-        """
-        SELECT
-            f.consolidation_scope,
-            COUNT(DISTINCT f.period) AS period_count
-        FROM xbrl_profit_loss_facts AS f
-        JOIN data_sources AS ds
-          ON ds.source_id = f.source_id
-        WHERE f.ticker = ?
-          AND ds.source_code = ?
-          AND f.consolidation_scope IN ('consolidated', 'non_consolidated')
-          AND f.value IS NOT NULL
-        GROUP BY f.consolidation_scope
-        """,
-        (ticker, source),
-    ).fetchall()
-
-    counts: dict[ResolvedScope, int] = {scope: 0 for scope in _SCOPE_PRIORITY}
-    for row in rows:
-        scope = str(row["consolidation_scope"])
-        if scope in counts:
-            counts[scope] = int(row["period_count"])
-    return counts
-
-
-def _resolve_scope(
-    conn: sqlite3.Connection,
-    *,
-    ticker: str,
-    source: str,
-    requested_scope: ScopeArg,
-    n_periods: int,
-) -> ResolvedScope:
-    if requested_scope in _SCOPE_PRIORITY:
-        return requested_scope
-
-    counts = _get_period_counts_by_scope(conn, ticker=ticker, source=source)
-    enough_periods = [
-        scope for scope in _SCOPE_PRIORITY if counts[scope] >= n_periods
-    ]
-    if enough_periods:
-        return enough_periods[0]
-
-    available = [scope for scope in _SCOPE_PRIORITY if counts[scope] > 0]
-    if not available:
-        raise ValueError(f"No PL XBRL facts found for ticker {ticker}")
-    return sorted(
-        available,
-        key=lambda scope: (-counts[scope], _SCOPE_PRIORITY.index(scope)),
-    )[0]
-
-
-def _candidate_rank(candidate: _CandidateReport) -> tuple:
+def _candidate_rank(candidate: _CandidateReport, requested_scope: ScopeArg) -> tuple:
+    if requested_scope == "consolidated":
+        scope_rank = 0 if candidate.consolidation_scope == "consolidated" else 1
+    elif requested_scope == "non_consolidated":
+        scope_rank = 0 if candidate.consolidation_scope == "non_consolidated" else 1
+    elif candidate.consolidation_scope == "consolidated" and candidate.role_fact_count > 0:
+        scope_rank = 0
+    elif candidate.consolidation_scope == "non_consolidated" and candidate.role_fact_count > 0:
+        scope_rank = 1
+    elif candidate.consolidation_scope == "consolidated":
+        scope_rank = 2
+    else:
+        scope_rank = 3
     return (
+        scope_rank,
         -candidate.role_fact_count,
         -candidate.fact_count,
         _descending_text_key(candidate.doc_id),
@@ -246,12 +196,16 @@ def _select_reports(
     ticker: str,
     source: str,
     periods: list[str],
-    scope: ResolvedScope,
+    requested_scope: ScopeArg,
 ) -> dict[str, _CandidateReport]:
     if not periods:
         return {}
 
-    params: list[str] = [ticker, source, *periods, scope]
+    scope_filter = ""
+    params: list[str] = [ticker, source, *periods]
+    if requested_scope != "auto":
+        scope_filter = "AND f.consolidation_scope = ?"
+        params.append(requested_scope)
 
     rows = conn.execute(
         f"""
@@ -269,7 +223,7 @@ def _select_reports(
           AND ds.source_code = ?
           AND f.period IN ({_period_placeholders(periods)})
           AND f.value IS NOT NULL
-          AND f.consolidation_scope = ?
+          {scope_filter}
         GROUP BY f.period, f.doc_id, f.consolidation_scope
         """,
         params,
@@ -293,7 +247,7 @@ def _select_reports(
         if candidates:
             selected[period] = sorted(
                 candidates,
-                key=_candidate_rank,
+                key=lambda candidate: _candidate_rank(candidate, requested_scope),
             )[0]
     return selected
 
@@ -524,34 +478,21 @@ def build_pl_trend_payload(
     n_periods: int = 10,
     scope: ScopeArg = "auto",
 ) -> PlTrendPayload:
-    resolved_scope = _resolve_scope(
-        conn,
-        ticker=ticker,
-        source=source,
-        requested_scope=scope,
-        n_periods=n_periods,
-    )
-    periods = _get_latest_periods(
-        conn,
-        ticker=ticker,
-        source=source,
-        scope=resolved_scope,
-        n_periods=n_periods,
-    )
+    periods = _get_latest_periods(conn, ticker=ticker, source=source, n_periods=n_periods)
     if not periods:
-        raise ValueError(f"No {resolved_scope} PL XBRL facts found for ticker {ticker}")
+        raise ValueError(f"No PL XBRL facts found for ticker {ticker}")
 
     selected_reports = _select_reports(
         conn,
         ticker=ticker,
         source=source,
         periods=periods,
-        scope=resolved_scope,
+        requested_scope=scope,
     )
     missing_periods = [period for period in periods if period not in selected_reports]
     if missing_periods:
         joined = ", ".join(missing_periods)
-        raise ValueError(f"No {resolved_scope} PL XBRL facts found for {ticker}: {joined}")
+        raise ValueError(f"No {scope} PL XBRL facts found for {ticker}: {joined}")
 
     latest_report = _get_latest_doc_for_order(selected_reports)
     presentation_order, labels = _get_presentation_order_and_labels(
