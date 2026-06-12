@@ -378,12 +378,18 @@ def test_display_label_covers_public_report_xbrl_concepts() -> None:
         "SalesDiscountsNOE": "売上割引",
         "SurrenderValueOfInsuranceEI": "保険解約返戻金",
         "TaxesAndDuesSGA": "租税公課",
-        "TechnicalAdvisoryFeeNOI": "技術助成金収入",
+        "TechnicalAdvisoryFeeNOI": "受取技術援助料",
         "TradingRelatedExpensesSGASEC": "トレーディング関連費用",
     }
 
     for concept_name, label in expected.items():
         assert pl_trends._display_label(concept_name, {}) == label
+
+
+def test_display_label_prefers_japanese_presentation_label() -> None:
+    labels = {"CompensationExpensesEL": "支払補償費"}
+
+    assert pl_trends._display_label("CompensationExpensesEL", labels) == "支払補償費"
 
 
 def test_render_html_embeds_data() -> None:

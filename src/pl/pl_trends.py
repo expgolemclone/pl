@@ -22,7 +22,7 @@ _JAPANESE_PL_LABELS: dict[str, str] = {
     "CommissionForUnderwritingSecondaryDistributionAndSolicitationForSellingAndOthersForProfessionalInvestorsORSEC": "引受・売出・私募等手数料",
     "CommissionReceivedORSEC": "受取手数料",
     "CommissionToConsigneesORSEC": "委託手数料",
-    "CompensationExpensesEL": "補償費",
+    "CompensationExpensesEL": "支払補償費",
     "ContractCostsNOE": "業務受託費",
     "ConsumedGoodsInTheCompanyCOS": "社内消費高",
     "ContributionEL": "寄付金",
@@ -126,8 +126,8 @@ _JAPANESE_PL_LABELS: dict[str, str] = {
     "SubsidyIncomeNOIBounty": "助成金収入",
     "SurrenderValueOfInsuranceEI": "保険解約返戻金",
     "TaxesAndDuesSGA": "租税公課",
-    "TechnicalAdviseFeeNOI": "技術指導料収入",
-    "TechnicalAdvisoryFeeNOI": "技術助成金収入",
+    "TechnicalAdviseFeeNOI": "受取技術援助料",
+    "TechnicalAdvisoryFeeNOI": "受取技術援助料",
     "TotalBeginningAndCostPurchasedMerchandiseAndFinishedGoodsCOS": "期首商品・製品棚卸高及び仕入高合計",
     "TradingRelatedExpensesSGASEC": "トレーディング関連費用",
 }
@@ -341,12 +341,12 @@ def _label_score(label: str, concept_name: str) -> tuple[int, str]:
 
 
 def _display_label(concept_name: str, labels: dict[str, str]) -> str:
-    mapped = _JAPANESE_PL_LABELS.get(concept_name)
-    if mapped is not None:
-        return mapped
     label = labels.get(concept_name, concept_name)
     if label != concept_name and any(ord(ch) > 127 for ch in label):
         return label
+    mapped = _JAPANESE_PL_LABELS.get(concept_name)
+    if mapped is not None:
+        return mapped
     return concept_name
 
 
