@@ -340,6 +340,52 @@ def test_build_payload_selects_consolidated_reports_and_dedupes_values(tmp_path:
     assert len(items["NetSales"]["forecast_values"]) == 2
 
 
+def test_display_label_covers_public_report_xbrl_concepts() -> None:
+    expected = {
+        "CommissionForUnderwritingSecondaryDistributionAndSolicitationForSellingAndOthersForProfessionalInvestorsORSEC": "引受・売出・私募等手数料",
+        "CommissionReceivedORSEC": "受取手数料",
+        "CommissionToConsigneesORSEC": "委託手数料",
+        "DepreciationSGA": "減価償却費",
+        "DirectorsRetirementBenefitsEL": "役員退職慰労金",
+        "EquityInEarningsOfAffiliatesNOI": "持分法による投資利益",
+        "FeeForOfferingSecondaryDistributionAndSolicitationForSellingAndOthersForProfessionalInvestorsORSEC": "売出・私募等に係る費用",
+        "FinancialExpensesSEC": "金融費用",
+        "FinancialRevenueORSEC": "金融収益",
+        "GainOnNegativeGoodwillEI": "負ののれん発生益",
+        "GainOnReversalOfSubscriptionRightsToSharesEI": "新株予約権消滅益",
+        "GainOnTransferOfBenefitObligationRelatingToEmployeesPensionFundEI": "厚生年金基金代行部分移転益",
+        "IncomeBeforeMinorityInterests": "少数株主利益控除前利益",
+        "InsuranceIncomeEI": "保険収入",
+        "LossOnBusinessOfSubsidiariesAndAffiliatesEL": "関係会社事業損失",
+        "LossOnDisasterEL": "災害損失",
+        "LossOnRedemptionOfInvestmentSecuritiesEL": "投資有価証券償還損",
+        "LossOnSalesOfInvestmentSecuritiesEL": "投資有価証券売却損",
+        "MinorityInterestsInIncome": "少数株主利益",
+        "NetIncome": "当期純利益",
+        "NetOperatingRevenueSEC": "営業収益純額",
+        "NetTradingIncomeORSEC": "トレーディング純収益",
+        "OfficeCostSGA": "事務費",
+        "OperatingRevenueSEC": "営業収益",
+        "OtherEL": "その他特別損失",
+        "OtherFeesReceivedORSEC": "その他受取手数料",
+        "ProvisionOfAllowanceForDoubtfulAccountsEL": "貸倒引当金繰入額",
+        "ProvisionOfReserveForCommoditiesTransactionLiabilitiesEL": "商品取引引当金繰入額",
+        "ProvisionOfReserveForFinancialProductsTransactionLiabilitiesELSEC": "金融商品取引引当金繰入額",
+        "PurchaseDiscountsNOI": "仕入割引",
+        "RealEstateExpensesSGASEC": "不動産費用",
+        "ReversalOfReserveForCommoditiesTransactionLiabilitiesEI": "商品取引引当金戻入益",
+        "ReversalOfReserveForFinancialProductsTransactionLiabilitiesEISEC": "金融商品取引引当金戻入益",
+        "SalesDiscountsNOE": "売上割引",
+        "SurrenderValueOfInsuranceEI": "保険解約返戻金",
+        "TaxesAndDuesSGA": "租税公課",
+        "TechnicalAdvisoryFeeNOI": "技術助成金収入",
+        "TradingRelatedExpensesSGASEC": "トレーディング関連費用",
+    }
+
+    for concept_name, label in expected.items():
+        assert pl_trends._display_label(concept_name, {}) == label
+
+
 def test_render_html_embeds_data() -> None:
     payload = {
         "ticker": "4776",
