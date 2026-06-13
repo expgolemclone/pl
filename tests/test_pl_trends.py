@@ -438,6 +438,11 @@ def test_render_html_embeds_data() -> None:
     assert "forecast-help" not in rendered
     assert "CAGR forecast" in rendered
     assert "CAGR = (Vlast / Vfirst)^(1 / gaps) - 1" in rendered
+    assert "formatCagr" in rendered
+    assert "col-cagr cagr-cell" in rendered
+    assert "showForecast ? `<th class=\"col-cagr cagr-cell\"" in rendered
+    assert "showForecast ? `<td class=\"col-cagr cagr-cell\">" in rendered
+    assert "CAGR \" + formatCagr(entry.item.cagr)" in rendered
     assert "CAGR予測を表示" not in rendered
     assert "CAGR予測を非表示" not in rendered
     assert "toggleForecast" in rendered

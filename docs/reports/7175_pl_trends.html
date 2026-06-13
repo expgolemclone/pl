@@ -295,6 +295,10 @@ th.col-spark {
   width: 100px;
   min-width: 100px;
 }
+th.col-cagr {
+  width: 76px;
+  min-width: 76px;
+}
 td.col-toggle {
   width: 36px;
   min-width: 36px;
@@ -316,6 +320,10 @@ td.col-label {
 td.col-spark {
   width: 100px;
   min-width: 100px;
+}
+td.col-cagr {
+  width: 76px;
+  min-width: 76px;
 }
 td.col-label b {
   display: block;
@@ -396,6 +404,11 @@ td.forecast-cell {
   color: var(--accent-3);
   font-style: italic;
   opacity: 0.85;
+}
+.cagr-cell {
+  color: var(--accent-3);
+  font-weight: 700;
+  white-space: nowrap;
 }
 @media (max-width: 1200px) {
   header {
@@ -520,6 +533,12 @@ const compactValue = (value) => {
   const scaled = scaleValue(value);
   return scaled.toLocaleString("ja-JP", { notation: "compact", maximumFractionDigits: 2 });
 };
+const formatCagr = (value) => {
+  if (value === null || value === undefined || Number.isNaN(value)) return "-";
+  const pct = value * 100;
+  const sign = pct > 0 ? "+" : "";
+  return sign + pct.toLocaleString("ja-JP", { maximumFractionDigits: 1 }) + "%";
+};
 
 function toggleItemSelection(conceptName) {
   if (selectedConcepts.includes(conceptName)) {
@@ -563,7 +582,8 @@ function renderPeriodStrip() {
 
 function renderTableHeader() {
   const fcHeaders = showForecast ? data.forecast_periods.map((p) => `<th class="forecast-cell">${p}</th>`).join("") : "";
-  el("tableHead").innerHTML = `<tr><th class="col-toggle"></th><th class="col-label">項目</th><th class="col-spark">推移</th>${data.periods.map((period) => `<th>${period}</th>`).join("")}${fcHeaders}</tr>`;
+  const cagrHeader = showForecast ? `<th class="col-cagr cagr-cell" title="CAGR = (Vlast / Vfirst)^(1 / gaps) - 1">CAGR</th>` : "";
+  el("tableHead").innerHTML = `<tr><th class="col-toggle"></th><th class="col-label">項目</th><th class="col-spark">推移</th>${cagrHeader}${data.periods.map((period) => `<th>${period}</th>`).join("")}${fcHeaders}</tr>`;
 }
 
 function sparkline(values) {
@@ -596,12 +616,14 @@ function renderTable() {
     const color = isSelected ? seriesColor(selectedIndex) : "";
     const haystack = `${item.label} ${item.concept_name}`.toLowerCase();
     const hidden = query && !haystack.includes(query);
+    const cagrCell = showForecast ? `<td class="col-cagr cagr-cell">${formatCagr(item.cagr)}</td>` : "";
     const fcCells = showForecast ? item.forecast_values.map((value) => `<td class="forecast-cell">${compactValue(value)}</td>`).join("") : "";
     return `
     <tr class="${isSelected ? "selected-row" : ""} ${hidden ? "hidden-row" : ""} data-row" data-concept="${item.concept_name}" style="${isSelected ? "--series-color: " + color : ""}">
       <td class="col-toggle"><span class="cell-toggle" aria-hidden="true"></span></td>
       <td class="col-label"><b>${item.label}</b><span>${item.concept_name}</span></td>
       <td class="col-spark">${sparkline(item.values)}</td>
+      ${cagrCell}
       ${item.values.map((value) => `<td>${compactValue(value)}</td>`).join("")}
       ${fcCells}
     </tr>
@@ -837,7 +859,7 @@ function drawChart() {
       <div class="tooltip-row" style="--series-color: ${seriesColor(entry.index)}">
         <span class="series-dot"></span>
         <span>${entry.item.label}</span>
-        <strong>${formatValue(entry.rawValue)}</strong>
+        <strong>${formatValue(entry.rawValue)}${entry.isForecast ? " / CAGR " + formatCagr(entry.item.cagr) : ""}</strong>
       </div>
     `).join("")}`;
     tip.classList.add("is-visible");
