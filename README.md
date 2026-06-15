@@ -10,6 +10,7 @@ GitHub Pages: <https://expgolemclone.github.io/pl/>
 
 - [6142 富士精工](https://expgolemclone.github.io/pl/reports/6142_pl_trends.html)
 - [7175 今村証券](https://expgolemclone.github.io/pl/reports/7175_pl_trends.html)
+- [7218 田中精密工業](https://expgolemclone.github.io/pl/reports/7218_pl_trends.html)
 - [4776 サイボウズ](https://expgolemclone.github.io/pl/reports/4776_pl_trends.html)
 - [8473 SBI HD](https://expgolemclone.github.io/pl/reports/8473_pl_trends.html)
 - [8595 ジャフコグループ](https://expgolemclone.github.io/pl/reports/8595_pl_trends.html)

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+import re
 import sqlite3
 from pathlib import Path
 
@@ -347,6 +349,8 @@ def test_display_label_covers_public_report_xbrl_concepts() -> None:
         "CommissionForUnderwritingSecondaryDistributionAndSolicitationForSellingAndOthersForProfessionalInvestorsORSEC": "引受・売出・私募等手数料",
         "CommissionReceivedORSEC": "受取手数料",
         "CommissionToConsigneesORSEC": "委託手数料",
+        "CompensationIncomeEI": "補償金収入",
+        "CompensationIncomeNOI": "補償金収入",
         "ContributionToAnInvesteeNOE": "出資先への負担金",
         "CostOfOperationalInvestmentSecuritiesCOSExpOA": "営業投資有価証券売上原価",
         "DepreciationSGA": "減価償却費",
@@ -359,16 +363,26 @@ def test_display_label_covers_public_report_xbrl_concepts() -> None:
         "GainOnBargainPurchaseIFRS": "割安購入益",
         "GainOnNegativeGoodwillEI": "負ののれん発生益",
         "GainOnReversalOfSubscriptionRightsToSharesEI": "新株予約権消滅益",
+        "GainOnSalesOfGolfMembershipsEI": "ゴルフ会員権売却益",
         "GainOnTransferOfBenefitObligationRelatingToEmployeesPensionFundEI": "厚生年金基金代行部分移転益",
         "IncomeFromPartnershipManagementRevOA": "投資事業組合管理収入",
         "IncomeBeforeMinorityInterests": "少数株主利益控除前利益",
         "IncomeTaxExpenseIFRS": "法人所得税費用",
+        "IncomeTaxesForPriorPeriodsIncomeTaxes": "過年度法人税等",
         "InsuranceIncomeEI": "保険収入",
+        "InterestAndDividendsIncomeNOI": "受取利息及び受取配当金",
+        "LossOnAbolishmentOfRetirementBenefitPlanEL": "退職給付制度終了損",
         "LossOnBusinessOfSubsidiariesAndAffiliatesEL": "関係会社事業損失",
+        "LossOnCancellationOfLeaseContractsEL": "リース解約損",
         "LossOnDisasterEL": "災害損失",
         "LossOnRedemptionOfInvestmentSecuritiesEL": "投資有価証券償還損",
+        "LossOnReductionOfNoncurrentAssetsEL": "固定資産圧縮損",
+        "LossOnRetirementOfNoncurrentAssetsEL": "固定資産除却損",
+        "LossOnSalesOfGolfClubMembershipsEL": "ゴルフ会員権売却損",
         "LossOnSalesOfInvestmentSecuritiesEL": "投資有価証券売却損",
+        "LossOnSalesOfNoncurrentAssetsEL": "固定資産売却損",
         "LossOnSalesOfStocksOfSubsidiariesAndAffiliatesEL": "関係会社株式売却損",
+        "LossOnValuationOfGolfClubMembershipEL": "ゴルフ会員権評価損",
         "LossOnValuationOfInvestmentSecuritiesNOE": "投資有価証券評価損",
         "MiscellaneousIncomeNOI": "雑収益",
         "MiscellaneousLossNOE": "雑損失",
@@ -384,6 +398,7 @@ def test_display_label_covers_public_report_xbrl_concepts() -> None:
         "OtherCostCOSExpOA": "その他売上原価",
         "OtherFeesReceivedORSEC": "その他受取手数料",
         "OtherSalesRevOA": "その他売上高",
+        "ProceedsFromSalesOfScrapNOI": "作業くず売却収入",
         "ProfitLossAttributableToNonControllingInterestsIFRS": "非支配持分に帰属する当期利益",
         "ProfitLossAttributableToOwnersOfParentIFRS": "親会社の所有者に帰属する当期利益",
         "ProfitLossBeforeTaxIFRS": "税引前利益",
@@ -393,12 +408,16 @@ def test_display_label_covers_public_report_xbrl_concepts() -> None:
         "ProvisionOfReserveForFinancialProductsTransactionLiabilitiesELSEC": "金融商品取引引当金繰入額",
         "PurchaseDiscountsNOI": "仕入割引",
         "RealEstateExpensesSGASEC": "不動産費用",
+        "RefundIncomeNOI": "返戻金収入",
         "ReversalOfAdditionsToReserveForSuccessFeeRefundsGP": "成功報酬返戻引当金繰入額（△戻入額）",
+        "ReversalOfAllowanceForDoubtfulAccountsEI": "貸倒引当金戻入額",
         "ReversalOfReserveForCommoditiesTransactionLiabilitiesEI": "商品取引引当金戻入益",
         "ReversalOfReserveForFinancialProductsTransactionLiabilitiesEISEC": "金融商品取引引当金戻入益",
         "RevenueFromOperationalInvestmentSecuritiesRevOA": "営業投資有価証券売上高",
         "SalesDiscountsNOE": "売上割引",
         "ShareOfProfitLossOfInvestmentsAccountedForUsingEquityMethodIFRS": "持分法による投資損益",
+        "SpecialRetirementExpensesEL": "特別退職金",
+        "SubsidyEI": "補助金収入",
         "SurrenderValueOfInsuranceEI": "保険解約返戻金",
         "TaxesAndDuesSGA": "租税公課",
         "TechnicalAdvisoryFeeNOI": "受取技術援助料",
@@ -407,6 +426,31 @@ def test_display_label_covers_public_report_xbrl_concepts() -> None:
 
     for concept_name, label in expected.items():
         assert pl_trends._display_label(concept_name, {}) == label
+
+
+def test_public_report_item_labels_are_translated() -> None:
+    report_dir = Path(__file__).resolve().parents[1] / "docs" / "reports"
+    report_paths = sorted(report_dir.glob("*_pl_trends.html"))
+
+    assert report_paths
+
+    untranslated: list[tuple[str, str, str]] = []
+    for report_path in report_paths:
+        rendered = report_path.read_text(encoding="utf-8")
+        match = re.search(
+            r"window\.PL_TREND_DATA = (.*?);\n</script>",
+            rendered,
+            re.S,
+        )
+        assert match is not None, report_path
+        payload = json.loads(match.group(1))
+        untranslated.extend(
+            (report_path.name, item["concept_name"], item["label"])
+            for item in payload["items"]
+            if not any(ord(ch) > 127 for ch in item["label"])
+        )
+
+    assert untranslated == []
 
 
 def test_display_label_prefers_japanese_presentation_label() -> None:
