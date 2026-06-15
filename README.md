@@ -8,6 +8,7 @@ EDINET XBRLデータをSQLiteから読み込み、インタラクティブなダ
 
 GitHub Pages: <https://expgolemclone.github.io/pl/>
 
+- [1960 サンテック](https://expgolemclone.github.io/pl/reports/1960_pl_trends.html)
 - [6142 富士精工](https://expgolemclone.github.io/pl/reports/6142_pl_trends.html)
 - [7175 今村証券](https://expgolemclone.github.io/pl/reports/7175_pl_trends.html)
 - [7218 田中精密工業](https://expgolemclone.github.io/pl/reports/7218_pl_trends.html)
