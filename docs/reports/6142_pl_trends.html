@@ -341,7 +341,7 @@ tr.selected-row td {
   background: rgba(85,214,194,0.08);
 }
 tr.selected-row td.col-toggle {
-  box-shadow: inset 4px 0 0 var(--accent);
+  box-shadow: inset 4px 0 0 var(--series-color);
 }
 tr.selected-row td.col-toggle .cell-toggle {
   border-color: var(--series-color);
@@ -510,9 +510,17 @@ const canvasTheme = {
   zero: "#f0eadb",
   pointFill: "#151917"
 };
+const inactiveSparkColor = "#55d6c2";
 
 const el = (id) => document.getElementById(id);
 const seriesColor = (index) => colors[index % colors.length];
+function selectedColor(conceptName) {
+  const selectedIndex = selectedConcepts.indexOf(conceptName);
+  if (selectedIndex < 0) {
+    throw new Error(`Color requested for unselected concept: ${conceptName}`);
+  }
+  return seriesColor(selectedIndex);
+}
 const selectedItems = () => selectedConcepts
   .map((concept) => data.items.find((item) => item.concept_name === concept))
   .filter(Boolean);
@@ -586,7 +594,7 @@ function renderTableHeader() {
   el("tableHead").innerHTML = `<tr><th class="col-toggle"></th><th class="col-label">項目</th><th class="col-spark">推移</th>${cagrHeader}${data.periods.map((period) => `<th>${period}</th>`).join("")}${fcHeaders}</tr>`;
 }
 
-function sparkline(values) {
+function sparkline(values, strokeColor) {
   const width = 92;
   const height = 36;
   const present = values.map((value, index) => [value, index]).filter(([value]) => value !== null && value !== undefined);
@@ -604,7 +612,7 @@ function sparkline(values) {
     return `${x.toFixed(2)},${y.toFixed(2)}`;
   });
   return `<svg class="spark" viewBox="0 0 ${width} ${height}" aria-hidden="true">
-    <polyline points="${points.join(" ")}" fill="none" stroke="#55d6c2" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></polyline>
+    <polyline points="${points.join(" ")}" fill="none" stroke="${strokeColor}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></polyline>
   </svg>`;
 }
 
@@ -613,7 +621,8 @@ function renderTable() {
   const rows = data.items.map((item) => {
     const selectedIndex = selectedIndexOf(item);
     const isSelected = selectedIndex !== -1;
-    const color = isSelected ? seriesColor(selectedIndex) : "";
+    const color = isSelected ? selectedColor(item.concept_name) : "";
+    const sparkColor = isSelected ? color : inactiveSparkColor;
     const haystack = `${item.label} ${item.concept_name}`.toLowerCase();
     const hidden = query && !haystack.includes(query);
     const cagrCell = showForecast ? `<td class="col-cagr cagr-cell">${formatCagr(item.cagr)}</td>` : "";
@@ -622,7 +631,7 @@ function renderTable() {
     <tr class="${isSelected ? "selected-row" : ""} ${hidden ? "hidden-row" : ""} data-row" data-concept="${item.concept_name}" style="${isSelected ? "--series-color: " + color : ""}">
       <td class="col-toggle"><span class="cell-toggle" aria-hidden="true"></span></td>
       <td class="col-label"><b>${item.label}</b><span>${item.concept_name}</span></td>
-      <td class="col-spark">${sparkline(item.values)}</td>
+      <td class="col-spark">${sparkline(item.values, sparkColor)}</td>
       ${cagrCell}
       ${item.values.map((value) => `<td>${compactValue(value)}</td>`).join("")}
       ${fcCells}
@@ -737,7 +746,7 @@ function drawChart() {
   series.forEach((item, seriesIndex) => {
     const actual = scaledActual[seriesIndex];
     const fc = scaledFc[seriesIndex];
-    const color = seriesColor(seriesIndex);
+    const color = selectedColor(item.concept_name);
 
     /* Solid actual line */
     ctx.strokeStyle = color;
@@ -856,7 +865,7 @@ function drawChart() {
     const fcTag = nearest.isForecast ? " <span style=\"color:#f4b942;font-size:10px\">(予測)</span>" : "";
 
     tip.innerHTML = `<b>${nearest.period}${fcTag}</b>${entries.map((entry) => `
-      <div class="tooltip-row" style="--series-color: ${seriesColor(entry.index)}">
+      <div class="tooltip-row" style="--series-color: ${selectedColor(entry.item.concept_name)}">
         <span class="series-dot"></span>
         <span>${entry.item.label}</span>
         <strong>${formatValue(entry.rawValue)}${entry.isForecast ? " / CAGR " + formatCagr(entry.item.cagr) : ""}</strong>

@@ -510,6 +510,15 @@ def test_render_html_supports_manual_multi_series_overlay() -> None:
     assert "selected-row" in rendered
     assert "scaledActual" in rendered
     assert "tooltip-row" in rendered
+    assert "function selectedColor(conceptName)" in rendered
+    assert 'const color = isSelected ? selectedColor(item.concept_name) : "";' in rendered
+    assert "const sparkColor = isSelected ? color : inactiveSparkColor;" in rendered
+    assert "sparkline(item.values, sparkColor)" in rendered
+    assert "const color = selectedColor(item.concept_name);" in rendered
+    assert "selectedColor(entry.item.concept_name)" in rendered
+    assert "seriesColor(seriesIndex)" not in rendered
+    assert "seriesColor(entry.index)" not in rendered
+    assert "box-shadow: inset 4px 0 0 var(--series-color);" in rendered
 
 
 def test_render_html_places_hover_details_below_chart() -> None:
