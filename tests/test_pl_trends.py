@@ -499,6 +499,8 @@ def test_render_html_embeds_data() -> None:
     assert "4776" in rendered
     assert "売上高" in rendered
     assert "detailChart" in rendered
+    assert "title-company" in rendered
+    assert "title-subject" in rendered
     assert "forecastToggle" in rendered
     assert "forecastToggleChart" not in rendered
     assert "forecastToggleTable" not in rendered
@@ -688,8 +690,14 @@ def test_render_html_contains_responsive_layout_guards() -> None:
     rendered = render_html(payload)
 
     assert "@media (max-width: 1200px)" in rendered
+    assert "grid-template-columns: minmax(0, 1fr);" in rendered
+    assert "grid-template-rows: auto 1fr;" in rendered
     assert "contain: inline-size layout paint;" in rendered
     assert "overflow-x: clip;" in rendered
+    assert "tr.data-row.hidden-row" in rendered
+    assert "td.latest-cell::before" in rendered
+    assert 'class="value-cell${index === data.periods.length - 1 ? " latest-cell" : ""}"' in rendered
+    assert 'data-period="${data.periods[index]}"' in rendered
     assert "ResizeObserver" in rendered
 
 

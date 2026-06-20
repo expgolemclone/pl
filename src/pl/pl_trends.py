@@ -732,6 +732,7 @@ button, input {{ font: inherit; }}
   min-width: 0;
   min-height: 100vh;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto 1fr;
   overflow-x: clip;
 }}
@@ -758,10 +759,24 @@ header > * {{
 }}
 h1 {{
   margin: 4px 0 0;
+  max-width: 100%;
   font-family: Georgia, "Yu Mincho", "Hiragino Mincho ProN", serif;
   font-size: clamp(30px, 5vw, 64px);
   line-height: 0.95;
   font-weight: 700;
+  overflow-wrap: normal;
+}}
+.title-company,
+.title-subject {{
+  display: inline-block;
+  max-width: 100%;
+  vertical-align: baseline;
+}}
+.title-company {{
+  overflow-wrap: anywhere;
+}}
+.title-subject {{
+  white-space: nowrap;
 }}
 .meta {{
   display: grid;
@@ -791,11 +806,13 @@ h1 {{
 }}
 .stage {{
   width: 100%;
+  min-width: 0;
   max-width: 100%;
   padding: clamp(16px, 3vw, 36px);
   overflow-x: clip;
 }}
 .chart-panel {{
+  width: 100%;
   min-width: 0;
   max-width: 100%;
   border: 2px solid var(--ink);
@@ -1099,7 +1116,7 @@ td.forecast-cell {{
 }}
 @media (max-width: 1200px) {{
   header {{
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }}
   .meta {{
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1108,6 +1125,14 @@ td.forecast-cell {{
 @media (max-width: 640px) {{
   header {{
     padding: 22px 18px 16px;
+  }}
+  .stage {{
+    padding: 12px;
+  }}
+  .chart-panel,
+  .table-panel {{
+    border-width: 1px;
+    box-shadow: 4px 4px 0 rgba(240,234,219,0.14);
   }}
   .meta {{
     grid-template-columns: 1fr;
@@ -1120,15 +1145,145 @@ td.forecast-cell {{
     height: clamp(260px, 48vh, 420px);
     padding: 10px;
   }}
+  .tooltip {{
+    max-height: 190px;
+  }}
   .period-strip {{
     grid-template-columns: repeat(var(--period-count), minmax(64px, 1fr));
   }}
   .period-cell {{
     min-width: 64px;
   }}
-  th.col-label, td.col-label {{
-    min-width: 140px;
-    max-width: 140px;
+  .table-panel {{
+    overflow-x: visible;
+  }}
+  .table-controls {{
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 10px;
+  }}
+  .search,
+  .seg,
+  .select-all-row,
+  .forecast-toggle {{
+    min-width: 0;
+    width: 100%;
+  }}
+  .seg button,
+  .select-all-row button,
+  .forecast-toggle {{
+    min-height: 42px;
+  }}
+  table,
+  tbody {{
+    display: block;
+    width: 100%;
+    min-width: 0;
+  }}
+  thead {{
+    display: none;
+  }}
+  th,
+  td {{
+    padding: 0;
+    border-bottom: 0;
+  }}
+  tr.data-row {{
+    display: grid;
+    grid-template-columns: 24px minmax(0, 1fr) minmax(82px, auto);
+    gap: 3px 10px;
+    align-items: center;
+    min-height: 72px;
+    padding: 10px 8px;
+    border-bottom: 1px solid var(--line);
+  }}
+  tr.data-row.hidden-row {{
+    display: none;
+  }}
+  tr.data-row:hover td,
+  tr.selected-row td {{
+    background: transparent;
+  }}
+  tr.selected-row {{
+    background: rgba(85,214,194,0.08);
+  }}
+  td.col-toggle {{
+    grid-column: 1;
+    grid-row: 1 / 3;
+    position: static;
+    width: 24px;
+    min-width: 24px;
+    text-align: left;
+    background: transparent;
+  }}
+  tr.selected-row td.col-toggle {{
+    box-shadow: inset 3px 0 0 var(--series-color);
+  }}
+  .cell-toggle {{
+    width: 16px;
+    height: 16px;
+    box-shadow: none;
+  }}
+  td.col-label {{
+    grid-column: 2;
+    grid-row: 1;
+    position: static;
+    min-width: 0;
+    max-width: none;
+    background: transparent;
+  }}
+  td.col-label b {{
+    font-size: 14px;
+    line-height: 1.25;
+  }}
+  td.col-label span {{
+    font-size: 10px;
+  }}
+  td.col-spark {{
+    grid-column: 2 / 4;
+    grid-row: 2;
+    width: auto;
+    min-width: 0;
+  }}
+  .spark {{
+    width: min(170px, 52vw);
+    height: 32px;
+  }}
+  td.col-cagr {{
+    grid-column: 2 / 4;
+    grid-row: 3;
+    width: auto;
+    min-width: 0;
+    text-align: left;
+    font-size: 11px;
+  }}
+  td.col-cagr::before {{
+    content: "CAGR ";
+    color: var(--muted);
+    font-weight: 400;
+  }}
+  td.value-cell,
+  td.forecast-cell {{
+    display: none;
+  }}
+  td.latest-cell {{
+    display: block;
+    grid-column: 3;
+    grid-row: 1;
+    align-self: start;
+    text-align: right;
+    color: var(--ink);
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+  }}
+  td.latest-cell::before {{
+    content: attr(data-period);
+    display: block;
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: 400;
   }}
 }}
 </style>
@@ -1256,7 +1411,17 @@ function toggleForecast() {{
 
 function initHeader() {{
   const latestReport = data.selected_reports[data.selected_reports.length - 1];
-  el("title").textContent = `${{data.ticker}} ${{data.name || ""}} 損益計算書`;
+  const title = el("title");
+  const titleCompany = document.createElement("span");
+  const titleSubject = document.createElement("span");
+  titleCompany.className = "title-company";
+  titleSubject.className = "title-subject";
+  titleCompany.textContent = `${{data.ticker}} ${{data.name || ""}}`.trim();
+  titleSubject.textContent = "損益計算書";
+  title.textContent = "";
+  title.appendChild(titleCompany);
+  title.appendChild(document.createTextNode(" "));
+  title.appendChild(titleSubject);
   el("scopeLabel").textContent = scopeText(latestReport.consolidation_scope);
   el("sourceLabel").textContent = sourceText(data.source);
   el("periodCount").textContent = data.periods.length;
@@ -1320,7 +1485,7 @@ function renderTable() {{
       <td class="col-label"><b>${{item.label}}</b><span>${{item.concept_name}}</span></td>
       <td class="col-spark">${{sparkline(item.values, sparkColor)}}</td>
       ${{cagrCell}}
-      ${{item.values.map((value) => `<td>${{compactValue(value)}}</td>`).join("")}}
+      ${{item.values.map((value, index) => `<td class="value-cell${{index === data.periods.length - 1 ? " latest-cell" : ""}}" data-period="${{data.periods[index]}}">${{compactValue(value)}}</td>`).join("")}}
       ${{fcCells}}
     </tr>
   `;
